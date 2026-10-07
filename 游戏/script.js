@@ -3,7 +3,8 @@
 
   /* 游戏模块：读 ?p= 参数决定进哪个游戏，不带则显示列表 */
   var ITEMS = [
-    { id: 'mines', name: '扫雷', desc: '三档难度，长按或标记模式插旗', path: '扫雷/index.html', ready: true }
+    { id: 'mines', name: '扫雷', desc: '三档难度，长按或标记模式插旗', path: '扫雷/index.html', ready: true },
+    { id: 'g2048', name: '2048', desc: '滑动合并，凑出 2048', path: '2048/index.html', ready: true }
   ];
 
   var sp = new URLSearchParams(window.location.search);

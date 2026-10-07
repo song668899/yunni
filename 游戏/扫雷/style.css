@@ -185,6 +185,12 @@ html, body {
   border: 1px solid #26262f;
 }
 
+/* 和弦预览：按住已翻开数字格时的按压态 */
+.cell.revealed.press {
+  background: #262633;
+  transform: scale(0.96);
+}
+
 .cell.flagged {
   background: #2a1a2c;
   border: 1px solid #3a2a3c;
@@ -272,6 +278,21 @@ html, body {
 }
 
 .mode-btn:active { transform: scale(0.97); }
+
+/* ---------- 胜利撒花 ---------- */
+.confetto {
+  position: fixed;
+  top: -14px;
+  z-index: 92;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  0% { opacity: 1; }
+  100% { transform: translateY(112vh) rotate(560deg); opacity: .9; }
+}
 
 /* ---------- 踩雷红闪 ---------- */
 .flash {

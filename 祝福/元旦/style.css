@@ -1,0 +1,213 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #081020;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#scene {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+  touch-action: none;
+}
+
+/* ---------- 中央文字（正片才显示） ---------- */
+.message {
+  position: fixed;
+  top: 40%;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 0 24px;
+  text-align: center;
+  pointer-events: none;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.message.show { opacity: 1; }
+
+.message .main {
+  font-size: clamp(34px, 11vw, 64px);
+  font-weight: 800;
+  letter-spacing: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #cfe6ff 45%, #8fc3ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 18px rgba(140, 190, 255, .6));
+  animation: icePulse 2.8s ease-in-out infinite;
+}
+
+.message .sub {
+  margin-top: 16px;
+  min-height: 1.6em;
+  font-size: clamp(14px, 4vw, 20px);
+  letter-spacing: 3px;
+  color: #dceaff;
+  text-shadow: 0 0 6px rgba(0, 0, 0, .8), 0 0 16px rgba(100, 150, 255, .7);
+  transition: opacity .5s ease;
+}
+
+.message .sub.fade { opacity: 0; }
+
+.message .hint {
+  margin-top: 26px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #9fc6ff;
+  opacity: .55;
+  animation: icePulse 2.8s ease-in-out infinite .8s;
+}
+
+@keyframes icePulse {
+  0%, 100% { opacity: .78; }
+  50% { opacity: 1; }
+}
+
+/* ---------- 倒数 ---------- */
+.count {
+  position: fixed;
+  top: 34%;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  pointer-events: none;
+  display: none;
+}
+
+.count.show { display: block; }
+
+.count-label {
+  font-size: clamp(14px, 4vw, 20px);
+  letter-spacing: 6px;
+  color: #9fc6ff;
+  text-shadow: 0 0 12px rgba(120, 170, 255, .6);
+}
+
+.count-num {
+  margin-top: 8px;
+  font-size: clamp(96px, 34vw, 190px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: #eaf6ff;
+  text-shadow: 0 0 34px rgba(140, 190, 255, .85), 0 0 90px rgba(120, 170, 255, .45);
+}
+
+.count-num.pop { animation: countPop .95s ease-out; }
+
+@keyframes countPop {
+  0% { transform: scale(1.9); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: scale(1); opacity: .92; }
+}
+
+/* ---------- 跳过按钮 ---------- */
+.skip {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: none;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: rgba(207, 228, 255, .85);
+  background: rgba(18, 30, 55, .55);
+  border: 1px solid rgba(140, 190, 255, .4);
+  border-radius: 999px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: transform .12s;
+}
+
+.skip.show { display: block; }
+.skip:active { transform: scale(.95); }
+
+/* ---------- 启动遮罩 ---------- */
+.start {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, rgba(22, 42, 88, .88), rgba(8, 16, 32, .97));
+  transition: opacity .9s ease;
+}
+
+.start.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.start button {
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: 4px;
+  color: #cfe4ff;
+  background: transparent;
+  border: 1px solid rgba(140, 190, 255, .6);
+  border-radius: 999px;
+  padding: 14px 36px;
+  cursor: pointer;
+  animation: ring 2.2s ease-in-out infinite;
+}
+
+.start .tip {
+  margin-top: 20px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #9fc6ff;
+  opacity: .55;
+}
+
+@keyframes ring {
+  0%, 100% { box-shadow: 0 0 0 rgba(140, 190, 255, 0); }
+  50% { box-shadow: 0 0 26px rgba(140, 190, 255, .55); }
+}
+
+/* ---------- 返回按钮 ---------- */
+.back {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 60;
+  padding: 8px 15px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: rgba(207, 228, 255, .85);
+  background: rgba(16, 28, 50, .55);
+  border: 1px solid rgba(140, 190, 255, .35);
+  border-radius: 999px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: transform .12s;
+}
+
+.back:active { transform: scale(.95); }

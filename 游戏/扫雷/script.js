@@ -13,7 +13,10 @@
   var LONG_PRESS = 400;
   var MOVE_TOLERANCE = 12;
   var RESULT_DELAY = 900;
+  var WAVE_MS = 24;          /* 波纹展开：每层间隔 */
+  var CONFETTI_N = 42;       /* 胜利撒花数量 */
   var STORE_PREFIX = 'minesweeper.best.';
+  var CONFETTI_COLORS = ['#ff5fa2', '#ffd700', '#7ec8ff', '#4ad16a', '#a06aff', '#ff8c00'];
 
   /* ==========================================================
      2. 状态
@@ -25,6 +28,7 @@
   var board = [];
   var revealed = [];
   var flagged = [];
+  var cellEls = [];          /* 格子 DOM 缓存 */
   var mines = [];
   var gameOver = false;
   var firstClick = true;
@@ -33,7 +37,8 @@
   var timerId = null;
   var resultTimer = null;
   var flagMode = false;
-  var press = null;
+  var press = null;          /* 闭格：按下/长按状态 */
+  var chordPress = null;     /* 已翻开数字格：和弦预览状态 */
 
   /* ==========================================================
      3. 元素
@@ -116,12 +121,14 @@
     board = [];
     revealed = [];
     flagged = [];
+    cellEls = [];
     mines = [];
     gameOver = false;
     firstClick = true;
     elapsed = 0;
     flagsPlaced = 0;
     press = null;
+    chordPress = null;
     setFlagMode(false);
     mineCountEl.textContent = MINES;
     timeEl.textContent = '0';
@@ -134,6 +141,7 @@
       board[r] = [];
       revealed[r] = [];
       flagged[r] = [];
+      cellEls[r] = [];
       for (var c = 0; c < COLS; c++) {
         board[r][c] = 0;
         revealed[r][c] = false;
@@ -142,6 +150,7 @@
         cell.className = 'cell closed';
         cell.dataset.r = r;
         cell.dataset.c = c;
+        cellEls[r][c] = cell;
         frag.appendChild(cell);
       }
     }
@@ -150,7 +159,8 @@
   }
 
   /* ==========================================================
-     7. 交互 —— 触摸/鼠标统一，长按或标记模式插旗
+     7. 交互 —— 触摸/鼠标统一；闭格长按或标记模式插旗；
+        已翻开数字格按下进入和弦预览，松开执行和弦
      ========================================================== */
   function cellFrom(target) {
     var el = target;
@@ -159,6 +169,31 @@
       el = el.parentNode;
     }
     return null;
+  }
+
+  function chordTargets(r, c) {
+    var list = [];
+    for (var dr = -1; dr <= 1; dr++) {
+      for (var dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        var nr = r + dr;
+        var nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        if (!revealed[nr][nc] && !flagged[nr][nc]) {
+          list.push({ r: nr, c: nc, el: cellEls[nr][nc] });
+        }
+      }
+    }
+    return list;
+  }
+
+  function clearChordPreview(cp) {
+    cp.cell.classList.remove('press');
+    for (var i = 0; i < cp.targets.length; i++) {
+      if (!revealed[cp.targets[i].r][cp.targets[i].c]) {
+        cp.targets[i].el.classList.remove('press');
+      }
+    }
   }
 
   function onDown(e) {
@@ -170,11 +205,21 @@
     var c = parseInt(cell.dataset.c);
 
     if (e.pointerType === 'mouse' && e.button === 2) {
-      doFlag(r, c, cell);
+      doFlag(r, c);
       return;
     }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (revealed[r][c]) return;
+
+    if (revealed[r][c]) {
+      if (!board[r][c]) return;
+      /* 和弦预览：数字格按下 → 周围可翻格高亮 */
+      chordPress = { cell: cell, r: r, c: c, x: e.clientX, y: e.clientY, targets: chordTargets(r, c) };
+      cell.classList.add('press');
+      for (var i = 0; i < chordPress.targets.length; i++) {
+        chordPress.targets[i].el.classList.add('press');
+      }
+      return;
+    }
 
     press = { cell: cell, r: r, c: c, x: e.clientX, y: e.clientY, fired: false };
     cell.classList.add('press');
@@ -182,11 +227,20 @@
       if (!press) return;
       press.fired = true;
       press.cell.classList.remove('press');
-      doFlag(press.r, press.c, press.cell);
+      doFlag(press.r, press.c);
     }, LONG_PRESS);
   }
 
   function onUp(e) {
+    if (chordPress) {
+      var cp = chordPress;
+      chordPress = null;
+      clearChordPreview(cp);
+      var movedC = Math.abs(e.clientX - cp.x) + Math.abs(e.clientY - cp.y);
+      if (movedC <= MOVE_TOLERANCE) doChord(cp.r, cp.c);
+      return;
+    }
+
     if (!press) return;
     var p = press;
     press = null;
@@ -197,11 +251,15 @@
     var moved = Math.abs(e.clientX - p.x) + Math.abs(e.clientY - p.y);
     if (moved > MOVE_TOLERANCE) return;
 
-    if (flagMode) doFlag(p.r, p.c, p.cell);
+    if (flagMode) doFlag(p.r, p.c);
     else doOpen(p.r, p.c);
   }
 
   function onCancel() {
+    if (chordPress) {
+      clearChordPreview(chordPress);
+      chordPress = null;
+    }
     if (!press) return;
     clearTimeout(press.timer);
     press.cell.classList.remove('press');
@@ -266,12 +324,64 @@
       placeMines(r, c);
       calcNumbers();
     }
-    reveal(r, c);
-    checkWin();
+    if (board[r][c] === 'M') {
+      boom(r, c);
+      return;
+    }
+    var dur = animateReveal(bfsCollect(r, c));
+    setTimeout(checkWin, dur + 80);
   }
 
-  function doFlag(r, c, cell) {
+  /* 和弦：数字格周围旗数 = 数字时，翻开其余未标记邻格 */
+  function doChord(r, c) {
+    if (gameOver) return;
+    var n = board[r][c];
+    if (!n || n === 'M') return;
+
+    var f = 0;
+    var closed = [];
+    for (var dr = -1; dr <= 1; dr++) {
+      for (var dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        var nr = r + dr;
+        var nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        if (flagged[nr][nc]) f++;
+        else if (!revealed[nr][nc]) closed.push([nr, nc]);
+      }
+    }
+    if (f !== n || !closed.length) return;
+
+    var mineCell = null;
+    var safe = [];
+    for (var i = 0; i < closed.length; i++) {
+      if (board[closed[i][0]][closed[i][1]] === 'M') mineCell = closed[i];
+      else safe.push(closed[i]);
+    }
+
+    if (mineCell) {
+      /* 踩雷：非雷格即时翻开，踩中的雷爆炸 */
+      for (var j = 0; j < safe.length; j++) {
+        revealed[safe[j][0]][safe[j][1]] = true;
+        paintOpen(safe[j][0], safe[j][1]);
+      }
+      boom(mineCell[0], mineCell[1]);
+      return;
+    }
+
+    var steps = [];
+    for (var k = 0; k < safe.length; k++) {
+      if (!revealed[safe[k][0]][safe[k][1]]) {
+        steps = steps.concat(bfsCollect(safe[k][0], safe[k][1]));
+      }
+    }
+    var dur = animateReveal(steps);
+    setTimeout(checkWin, dur + 80);
+  }
+
+  function doFlag(r, c) {
     if (gameOver || revealed[r][c]) return;
+    var cell = cellEls[r][c];
     flagged[r][c] = !flagged[r][c];
     if (flagged[r][c]) {
       cell.classList.add('flagged');
@@ -285,16 +395,31 @@
     mineCountEl.textContent = Math.max(0, MINES - flagsPlaced);
   }
 
+  /* 布雷：首点周围半径 2（5×5）禁雷 → 首点必为 0 格，开局大片展开；
+     放不下时半径逐级退到 1、0 */
   function placeMines(safeR, safeC) {
-    var placed = 0;
-    while (placed < MINES) {
-      var r = Math.floor(Math.random() * ROWS);
-      var c = Math.floor(Math.random() * COLS);
-      if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
-      if (board[r][c] === 'M') continue;
-      board[r][c] = 'M';
-      mines.push([r, c]);
-      placed++;
+    for (var radius = 2; radius >= 0; radius--) {
+      var candidates = [];
+      for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+          if (Math.max(Math.abs(r - safeR), Math.abs(c - safeC)) > radius) {
+            candidates.push([r, c]);
+          }
+        }
+      }
+      if (candidates.length < MINES) continue;
+
+      for (var i = candidates.length - 1; i > 0; i--) {
+        var j = (Math.random() * (i + 1)) | 0;
+        var t = candidates[i];
+        candidates[i] = candidates[j];
+        candidates[j] = t;
+      }
+      for (var k = 0; k < MINES; k++) {
+        board[candidates[k][0]][candidates[k][1]] = 'M';
+        mines.push(candidates[k]);
+      }
+      return;
     }
   }
 
@@ -316,35 +441,64 @@
     }
   }
 
-  function reveal(r, c) {
-    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
-    if (revealed[r][c] || flagged[r][c]) return;
-
-    revealed[r][c] = true;
-    var cell = getCell(r, c);
-    cell.classList.remove('closed', 'press');
-    cell.classList.add('revealed');
-
-    if (board[r][c] === 'M') {
-      boom(r, c, cell);
-      return;
-    }
-
-    if (board[r][c] > 0) {
-      cell.dataset.n = board[r][c];
-      cell.textContent = board[r][c];
-    } else {
-      for (var dr = -1; dr <= 1; dr++) {
-        for (var dc = -1; dc <= 1; dc++) {
-          reveal(r + dr, c + dc);
+  /* BFS 收集：从 (sr,sc) 连通展开的所有格，带 BFS 距离（波纹用） */
+  function bfsCollect(sr, sc) {
+    var steps = [];
+    var queue = [[sr, sc, 0]];
+    var head = 0;
+    while (head < queue.length) {
+      var it = queue[head++];
+      var r = it[0];
+      var c = it[1];
+      var d = it[2];
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+      if (revealed[r][c] || flagged[r][c]) continue;
+      revealed[r][c] = true;
+      steps.push([r, c, d]);
+      if (board[r][c] === 0) {
+        for (var dr = -1; dr <= 1; dr++) {
+          for (var dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            queue.push([r + dr, c + dc, d + 1]);
+          }
         }
       }
     }
+    return steps;
   }
 
-  function boom(r, c, cell) {
+  /* 波纹式翻开：按 BFS 距离逐层延迟上屏，返回动画总时长 */
+  function animateReveal(steps) {
+    var maxD = 0;
+    for (var i = 0; i < steps.length; i++) {
+      var r = steps[i][0];
+      var c = steps[i][1];
+      var delay = steps[i][2] * WAVE_MS;
+      if (steps[i][2] > maxD) maxD = steps[i][2];
+      (function (rr, cc, dd) {
+        setTimeout(function () {
+          paintOpen(rr, cc);
+        }, dd);
+      })(r, c, delay);
+    }
+    return maxD * WAVE_MS;
+  }
+
+  function paintOpen(r, c) {
+    var cell = cellEls[r][c];
+    cell.classList.remove('closed', 'press');
+    cell.classList.add('revealed');
+    if (board[r][c] > 0) {
+      cell.dataset.n = board[r][c];
+      cell.textContent = board[r][c];
+    }
+  }
+
+  function boom(r, c) {
     gameOver = true;
     stopTimer();
+    var cell = cellEls[r][c];
+    cell.classList.remove('closed', 'press');
     cell.classList.add('mine-death');
     restartEl.textContent = '😵';
     vibrate([90, 50, 180]);
@@ -359,12 +513,12 @@
   }
 
   function revealAll(deathR, deathC) {
-    var r, c, cell;
+    var r, c;
 
     for (r = 0; r < ROWS; r++) {
       for (c = 0; c < COLS; c++) {
         if (flagged[r][c] && board[r][c] !== 'M') {
-          getCell(r, c).classList.add('misflagged');
+          cellEls[r][c].classList.add('misflagged');
         }
       }
     }
@@ -374,14 +528,9 @@
       var mc = mines[i][1];
       if (mr === deathR && mc === deathC) continue;
       if (flagged[mr][mc]) continue;
-      cell = getCell(mr, mc);
-      cell.classList.remove('closed', 'press');
-      cell.classList.add('revealed', 'mine');
+      cellEls[mr][mc].classList.remove('closed', 'press');
+      cellEls[mr][mc].classList.add('revealed', 'mine');
     }
-  }
-
-  function getCell(r, c) {
-    return boardEl.querySelector('[data-r="' + r + '"][data-c="' + c + '"]');
   }
 
   function checkWin() {
@@ -400,18 +549,41 @@
       var mr = mines[i][0];
       var mc = mines[i][1];
       if (flagged[mr][mc]) continue;
-      getCell(mr, mc).classList.add('flagged');
+      cellEls[mr][mc].classList.add('flagged');
     }
     flagsPlaced = MINES;
     mineCountEl.textContent = 0;
 
     vibrate([30, 60, 30, 60, 30]);
+    celebrate();
     var isRecord = saveBest(elapsed);
     showResult(true, isRecord);
   }
 
   /* ==========================================================
-     9. 结算面板
+     9. 胜利撒花
+     ========================================================== */
+  function celebrate() {
+    for (var i = 0; i < CONFETTI_N; i++) {
+      var el = document.createElement('span');
+      el.className = 'confetto';
+      el.style.left = (Math.random() * 100) + 'vw';
+      el.style.width = (5 + Math.random() * 7) + 'px';
+      el.style.height = (8 + Math.random() * 8) + 'px';
+      el.style.background = CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0];
+      el.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+      el.style.animationDelay = (Math.random() * 0.5) + 's';
+      document.body.appendChild(el);
+      (function (node) {
+        setTimeout(function () {
+          if (node.parentNode) node.parentNode.removeChild(node);
+        }, 4200);
+      })(el);
+    }
+  }
+
+  /* ==========================================================
+     10. 结算面板
      ========================================================== */
   function showResult(win, isRecord) {
     clearTimeout(resultTimer);
@@ -437,7 +609,7 @@
   }
 
   /* ==========================================================
-     10. 最佳记录（存在本机）
+     11. 最佳记录（存在本机）
      ========================================================== */
   function bestKey() {
     return STORE_PREFIX + LEVELS[levelIndex].id;
@@ -463,7 +635,7 @@
   }
 
   /* ==========================================================
-     11. 计时、震动
+     12. 计时、震动
      ========================================================== */
   function startTimer() {
     if (timerId) return;

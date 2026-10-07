@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#081020">
+<title>元旦快乐</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+<button id="backBtn" class="back" type="button">← 返回</button>
+
+<div class="message" id="message">
+  <div class="main" id="mainText"></div>
+  <div class="sub" id="subText"></div>
+  <div class="hint" id="hint">点击屏幕，放一朵烟花</div>
+</div>
+
+<div class="count" id="countLayer">
+  <div class="count-label" id="countLabel"></div>
+  <div class="count-num" id="countNum"></div>
+</div>
+<button id="skipBtn" class="skip" type="button">跳过 »</button>
+
+<div class="start" id="start">
+  <button id="startBtn" type="button">开 启 倒 数</button>
+  <div class="tip">建议打开声音</div>
+</div>
+
+<audio id="bgm" loop preload="auto"></audio>
+<script src="script.js"></script>
+</body>
+</html>

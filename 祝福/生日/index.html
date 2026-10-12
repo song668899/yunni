@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#100916">
+<title>生日快乐</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+<button id="backBtn" class="back" type="button">← 返回</button>
+
+<div class="guide" id="guide"></div>
+
+<div class="message" id="message">
+  <div class="main" id="mainText"></div>
+  <div class="sub" id="subText"></div>
+  <div class="hint" id="hint">点击屏幕，放一朵烟花</div>
+</div>
+
+<div class="start" id="start">
+  <button id="startBtn" type="button">点 亮 蜡 烛</button>
+  <div class="tip">建议打开声音</div>
+</div>
+
+<audio id="bgm" loop preload="auto"></audio>
+<script src="script.js"></script>
+</body>
+</html>

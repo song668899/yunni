@@ -2,6 +2,7 @@
 .arts/
 .codeartsdoer/
 .merkle-snapshot.json
+.mimosa/
 
 # 系统文件
 Thumbs.db

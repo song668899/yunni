@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#0b0b10">
+<title>定制祝福</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button id="backBtn" class="back" type="button">← 返回</button>
+
+<div class="page">
+  <h1>定制祝福</h1>
+  <p class="lead">填上 TA 的名字和想说的话，生成一条专属链接，发给 TA。</p>
+
+  <div class="label">选一种祝福</div>
+  <div class="types" id="types"></div>
+
+  <div class="label">送给谁（可选）</div>
+  <input id="toInput" class="input" type="text" maxlength="12" placeholder="例如：小鱼" autocomplete="off">
+
+  <div class="label">想说的话（可选，留空用默认）</div>
+  <textarea id="msgInput" class="input area" maxlength="60" placeholder="" rows="2"></textarea>
+
+  <div class="label">你的署名（可选）</div>
+  <input id="fromInput" class="input" type="text" maxlength="12" placeholder="例如：阿爽" autocomplete="off">
+
+  <div class="result">
+    <div class="link-box" id="linkText">— 填好后这里会出现链接 —</div>
+    <div class="actions">
+      <button id="copyBtn" class="btn primary" type="button">复制链接</button>
+      <button id="previewBtn" class="btn" type="button">预览效果</button>
+    </div>
+    <div class="tip" id="copyTip">微信里粘贴给对方即可</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -17,6 +17,15 @@
   };
 
   /* ==========================================================
+     1.5 链接参数定制 —— ?msg=文案&from=署名（由「定制」页生成）
+     ========================================================== */
+  var QUERY = new URLSearchParams(window.location.search);
+  var qMsg = (QUERY.get('msg') || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  var qFrom = (QUERY.get('from') || '').trim().slice(0, 12);
+  if (qMsg) CONFIG.message = qMsg;
+  if (qFrom) CONFIG.subMessage = '—— 来自 ' + qFrom;
+
+  /* ==========================================================
      2. 渲染舞台 —— 画布、尺寸、主循环、指针
      ========================================================== */
   var canvas = document.getElementById('scene');
@@ -386,7 +395,7 @@
   var sprites = {};
   CONFIG.palette.forEach(function (c) { sprites[c] = makeSprite(c); });
 
-  document.title = CONFIG.title;
+  document.title = qMsg ? CONFIG.message : CONFIG.title;
   document.getElementById('mainText').textContent = CONFIG.message;
   document.getElementById('subText').textContent = CONFIG.subMessage;
 

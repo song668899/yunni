@@ -51,6 +51,29 @@ body {
   animation: goldPulse 2.8s ease-in-out infinite;
 }
 
+/* ---------- 链接定制：收件人 / 署名 ---------- */
+.message .to {
+  margin-bottom: 14px;
+  font-size: clamp(13px, 3.6vw, 17px);
+  letter-spacing: 3px;
+  color: #ffe4cc;
+  text-shadow: 0 0 8px rgba(255, 120, 60, .6);
+  display: none;
+}
+
+.message .to.show { display: block; }
+
+.message .from {
+  margin-top: 18px;
+  font-size: clamp(13px, 3.6vw, 17px);
+  letter-spacing: 2px;
+  color: #ffce9e;
+  opacity: .8;
+  display: none;
+}
+
+.message .from.show { display: block; }
+
 .message .sub {
   margin-top: 16px;
   min-height: 1.6em;

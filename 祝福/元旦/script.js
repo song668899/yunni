@@ -24,6 +24,15 @@
   };
 
   /* ==========================================================
+     1.5 链接参数定制 —— ?to=收件人&msg=主文案&from=署名（由「定制」页生成）
+     ========================================================== */
+  var QUERY = new URLSearchParams(window.location.search);
+  var qMsg = (QUERY.get('msg') || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  var qTo = (QUERY.get('to') || '').trim().slice(0, 12);
+  var qFrom = (QUERY.get('from') || '').trim().slice(0, 12);
+  if (qMsg) CONFIG.message = qMsg;
+
+  /* ==========================================================
      2. 渲染舞台 —— 画布、尺寸、主循环、精灵
      ========================================================== */
   var canvas = document.getElementById('scene');
@@ -311,9 +320,13 @@
     sprites[c] = makeSprite(c);
   });
 
-  document.title = CONFIG.title;
+  document.title = qMsg ? CONFIG.message : CONFIG.title;
   document.getElementById('mainText').textContent = CONFIG.message;
   document.getElementById('countLabel').textContent = '距离 ' + CONFIG.year;
+  var toEl = document.getElementById('toText');
+  if (qTo) { toEl.textContent = '致 ' + qTo; toEl.classList.add('show'); }
+  var fromEl = document.getElementById('fromText');
+  if (qFrom) { fromEl.textContent = '—— ' + qFrom; fromEl.classList.add('show'); }
 
   resize();
 

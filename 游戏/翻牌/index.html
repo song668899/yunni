@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#0b0b10">
+<title>记忆翻牌</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs" id="modeTabs"></div>
+  <div class="tabs" id="levelTabs"></div>
+
+  <div class="head" id="head">
+    <div class="stats solo" id="soloStats">
+      <span class="stat">步数 <b id="moves">0</b></span>
+      <span class="stat">时间 <b id="time">0</b></span>
+      <button id="restart" class="restart" type="button" aria-label="重开">😊</button>
+    </div>
+    <div class="stats duo" id="duoStats">
+      <div class="player" id="p1">
+        <span class="pname">玩家1</span><b id="s1">0</b>
+      </div>
+      <button id="restart2" class="restart" type="button" aria-label="重开">😊</button>
+      <div class="player" id="p2">
+        <b id="s2">0</b><span class="pname">玩家2</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+</div>
+
+<div id="scrim"></div>
+<div id="result">
+  <div class="title" id="resultTitle"></div>
+  <div class="msg" id="resultMsg"></div>
+  <div class="rows" id="resultRows"></div>
+  <div class="btns">
+    <button id="againBtn" class="btn primary" type="button">再来一局</button>
+    <button id="closeBtn" class="btn" type="button">看看棋盘</button>
+  </div>
+</div>
+
+<button id="backBtn" class="back" type="button">← 返回</button>
+<script src="script.js"></script>
+</body>
+</html>

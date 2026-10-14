@@ -1,0 +1,315 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0b0b10;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #e8e8f0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  padding: 10px 8px 14px;
+}
+
+/* ---------- 模式 / 难度 tab ---------- */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tabs button {
+  padding: 7px 16px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #a8a8c0;
+  background: #12121a;
+  border: 1px solid #23232f;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+
+.tabs button.active {
+  color: #ffd9e8;
+  border-color: #ff5fa2;
+}
+
+#modeTabs button.active {
+  color: #d9ecff;
+  border-color: #7ec8ff;
+}
+
+/* ---------- 头部 ---------- */
+.head {
+  min-height: 46px;
+  margin-bottom: 10px;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.stat {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #a8a8c0;
+}
+
+.stat b {
+  color: #e8e8f0;
+  font-size: 16px;
+  margin-left: 2px;
+}
+
+.restart {
+  padding: 4px 8px;
+  font-size: 18px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: transform .12s;
+}
+
+.restart:active { transform: scale(.85); }
+
+/* 双人计分 */
+.stats.duo { display: none; }
+
+.duo-on .stats.solo { display: none; }
+.duo-on .stats.duo { display: flex; }
+
+.player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid #23232f;
+  border-radius: 999px;
+  background: #12121a;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.player.active {
+  border-color: #ff5fa2;
+  box-shadow: 0 0 14px rgba(255, 95, 162, .35);
+}
+
+.pname { font-size: 13px; letter-spacing: 1px; color: #a8a8c0; }
+
+.player b { font-size: 16px; color: #ffd9e8; }
+
+/* ---------- 棋盘 ---------- */
+.board {
+  display: grid;
+  gap: var(--gap, 8px);
+  margin: 0 auto;
+}
+
+/* ---------- 卡片（3D 翻转） ---------- */
+.card {
+  position: relative;
+  perspective: 600px;
+  cursor: pointer;
+}
+
+.card-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform .45s cubic-bezier(.4, .1, .2, 1.2);
+}
+
+.card.flipped .card-inner,
+.card.matched .card-inner {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 牌背 */
+.face.back {
+  background: linear-gradient(145deg, #1b1b27, #12121a);
+  border: 1px solid #2b2b3a;
+}
+
+.face.back::after {
+  content: '';
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(126, 200, 255, .55), rgba(126, 200, 255, 0) 70%);
+}
+
+/* 牌面 */
+.face.front {
+  transform: rotateY(180deg);
+  font-size: calc(var(--cell, 64px) * .52);
+  line-height: 1;
+  background: linear-gradient(145deg, #201a26, #16121c);
+  border: 1px solid #3a2b38;
+}
+
+.card.matched .face.front {
+  border-color: #4ad16a;
+  box-shadow: 0 0 16px rgba(74, 209, 106, .35);
+  animation: matchPulse .5s ease-out;
+}
+
+.card.wrong .face.front {
+  animation: shake .45s;
+  border-color: #ff5f5f;
+}
+
+@keyframes matchPulse {
+  0% { transform: rotateY(180deg) scale(.82); }
+  60% { transform: rotateY(180deg) scale(1.1); }
+  100% { transform: rotateY(180deg) scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotateY(180deg) translateX(0); }
+  25% { transform: rotateY(180deg) translateX(-4px); }
+  50% { transform: rotateY(180deg) translateX(4px); }
+  75% { transform: rotateY(180deg) translateX(-3px); }
+}
+
+/* ---------- 结算抽屉 ---------- */
+#scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+  z-index: 40;
+}
+
+#scrim.show { opacity: 1; pointer-events: auto; }
+
+#result {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 22px 22px max(26px, env(safe-area-inset-bottom));
+  background: #16161f;
+  border-top: 1px solid #2b2b3a;
+  border-radius: 18px 18px 0 0;
+  text-align: center;
+  transform: translateY(110%);
+  transition: transform .35s cubic-bezier(.2, .8, .25, 1);
+}
+
+#result.show { transform: translateY(0); }
+
+#result .title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+#result .msg {
+  margin-top: 6px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #a8a8c0;
+}
+
+#result .rows {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 16px;
+}
+
+#result .row {
+  font-size: 12px;
+  color: #8f8fa8;
+  letter-spacing: 1px;
+}
+
+#result .row b {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  color: #e8e8f0;
+}
+
+#result .btns {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+#result .btn {
+  flex: 1;
+  padding: 13px 0;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #e8e8f0;
+  background: #12121a;
+  border: 1px solid #2b2b3a;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#result .btn.primary {
+  color: #1a0e16;
+  font-weight: 600;
+  background: linear-gradient(180deg, #ffb3d9, #ff8ec4);
+  border-color: transparent;
+}
+
+/* ---------- 返回按钮 ---------- */
+.back {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 60;
+  padding: 8px 15px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: rgba(232, 232, 240, .85);
+  background: rgba(18, 18, 26, .55);
+  border: 1px solid rgba(126, 200, 255, .35);
+  border-radius: 999px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: transform .12s;
+}
+
+.back:active { transform: scale(.95); }

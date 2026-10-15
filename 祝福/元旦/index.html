@@ -11,6 +11,7 @@
 <body>
 <canvas id="scene"></canvas>
 <button id="backBtn" class="back" type="button">← 返回</button>
+<button id="sfxBtn" class="sfx" type="button">🔊</button>
 
 <div class="message" id="message">
   <div class="to" id="toText"></div>
@@ -25,13 +26,13 @@
   <div class="count-num" id="countNum"></div>
 </div>
 <button id="skipBtn" class="skip" type="button">跳过 »</button>
-
 <div class="start" id="start">
   <button id="startBtn" type="button">开 启 倒 数</button>
   <div class="tip">建议打开声音</div>
 </div>
 
 <audio id="bgm" loop preload="auto"></audio>
+<script src="../sfx.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

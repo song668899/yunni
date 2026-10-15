@@ -21,9 +21,132 @@
      ========================================================== */
   var QUERY = new URLSearchParams(window.location.search);
   var qMsg = (QUERY.get('msg') || '').trim().replace(/\s+/g, ' ').slice(0, 60);
-  var qFrom = (QUERY.get('from') || '').trim().slice(0, 12);
+  var qFrom = QUERY.get('from') ? QUERY.get('from').trim().slice(0, 12) : '';
   if (qMsg) CONFIG.message = qMsg;
   if (qFrom) CONFIG.subMessage = '—— 来自 ' + qFrom;
+
+  /* ==========================================================
+     1.7 体验增强 —— 点击文字彩蛋 + 连击彩蛋（音效走 ../sfx.js）
+     ========================================================== */
+  function sfx(name) { if (window.SFX) window.SFX.play(name); }
+
+  var PHRASES = [
+    '我喜欢你', '遇见你真好', '你是我的例外', '心动信号', '怦然心动',
+    '你笑起来真好看', '往后余生都是你', '偷偷喜欢你', '命中注定', '你在的地方',
+    '满心欢喜', '小鹿乱撞', '今晚月色真美', '只想见你', '我的世界你来了',
+    '浪漫至死不渝', '万事胜意', '你比星星亮', '与你有关', '喜欢是藏不住的'
+  ];
+  var SUPER_WORDS = ['我喜欢你', '怦然心动', '你是我的例外', '遇见你真好'];
+
+  var phraseBag = [];
+  function nextPhrase() {
+    if (!phraseBag.length) {
+      phraseBag = PHRASES.slice();
+      for (var i = phraseBag.length - 1; i > 0; i--) {
+        var j = (Math.random() * (i + 1)) | 0;
+        var t = phraseBag[i];
+        phraseBag[i] = phraseBag[j];
+        phraseBag[j] = t;
+      }
+    }
+    return phraseBag.pop();
+  }
+
+  function spawnPhrase(x, y) {
+    if (Math.random() > 0.45) return;
+    var el = document.createElement('div');
+    el.className = 'phrase-pop';
+    el.textContent = nextPhrase();
+    el.style.left = Math.min(Math.max(x, 60), W - 60) + 'px';
+    el.style.top = Math.max(y - 20, 60) + 'px';
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2300);
+  }
+
+  var combo = { n: 0, at: 0, cool: 0 };
+  function tapCombo() {
+    var now = performance.now();
+    if (now < combo.cool) return;
+    if (now - combo.at > 2600) combo.n = 0;
+    combo.at = now;
+    combo.n++;
+    if (combo.n >= 5) {
+      combo.n = 0;
+      combo.cool = now + 8000;
+      superBurst();
+    }
+  }
+
+  function superBurst() {
+    sfx('chime');
+    /* 满屏七处爱心爆 */
+    for (var i = 0; i < 7; i++) {
+      (function (k) {
+        setTimeout(function () {
+          bursts.burst(
+            W * (0.12 + Math.random() * 0.76),
+            H * (0.18 + Math.random() * 0.5),
+            CONFIG.palette,
+            30
+          );
+        }, k * 120);
+      })(i);
+    }
+    var el = document.createElement('div');
+    el.className = 'super-word';
+    el.textContent = SUPER_WORDS[(Math.random() * SUPER_WORDS.length) | 0];
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2500);
+  }
+
+  /* ==========================================================
+     3.5 场景剪影 —— 粉紫双层山丘（预渲染离屏）
+     ========================================================== */
+  function createSkyline() {
+    var off = null;
+    var offW = 0;
+    var offH = 0;
+
+    function hill(g, w, h, height, wobble, color, ph) {
+      g.fillStyle = color;
+      g.beginPath();
+      g.moveTo(0, h);
+      for (var x = 0; x <= w; x += 8) {
+        var y = h - height
+          - Math.sin(x / w * Math.PI * 2 + ph) * wobble
+          - Math.sin(x / w * Math.PI * 5 + ph * 2) * wobble * 0.35;
+        g.lineTo(x, y);
+      }
+      g.lineTo(w, h);
+      g.closePath();
+      g.fill();
+    }
+
+    return {
+      resize: function (w, h) {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        offW = w;
+        offH = h;
+        off = document.createElement('canvas');
+        off.width = Math.round(w * dpr);
+        off.height = Math.round(h * dpr);
+        var g = off.getContext('2d');
+        g.scale(dpr, dpr);
+        hill(g, w, h, h * 0.11, h * 0.032, '#170d1c', 1.4);
+        hill(g, w, h, h * 0.055, h * 0.024, '#100914', 3.7);
+      },
+      draw: function (c) {
+        if (!off) return;
+        c.globalCompositeOperation = 'source-over';
+        c.drawImage(off, 0, 0, offW, offH);
+        c.globalCompositeOperation = 'lighter';
+      }
+    };
+  }
 
   /* ==========================================================
      2. 渲染舞台 —— 画布、尺寸、主循环、指针
@@ -404,6 +527,7 @@
   var heart = addLayer(createHeart(sprites));
   var bursts = addLayer(createParticleField(sprites));
   addLayer(createStarfield());
+  addLayer(createSkyline());
 
   window.addEventListener('resize', resize);
 
@@ -447,7 +571,12 @@
   });
 
   document.addEventListener('click', function (e) {
-    if (started) bursts.burst(e.clientX, e.clientY, CONFIG.palette, 16);
+    if (started) {
+      bursts.burst(e.clientX, e.clientY, CONFIG.palette, 16);
+      sfx('sparkle');
+      tapCombo();
+      spawnPhrase(e.clientX, e.clientY);
+    }
   });
 
   /* 返回模块菜单（在 iframe 内时可用；独立打开或分享直达 direct=1 则隐藏） */

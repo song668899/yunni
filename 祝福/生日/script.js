@@ -12,7 +12,22 @@
       '新的一岁，依然可爱，万事胜意',
       '祝你被这个世界，温柔以待',
       '眼里有光，心里有甜，未来可期',
-      '生日快乐，要一直开心下去呀'
+      '生日快乐，要一直开心下去呀',
+      '愿所有的美好，都如约而至',
+      '新岁胜旧岁，岁岁皆欢愉',
+      '祝你勇敢，也祝你被偏爱',
+      '愿时光能缓，愿故人不散',
+      '往后余生，平安喜乐',
+      '愿你活得漂亮，爱得坦荡',
+      '岁岁常欢愉，年年皆胜意',
+      '祝你前程似锦，归来仍是少年',
+      '愿这世间温柔，都不辜负你',
+      '新的一岁，去更大的世界看看',
+      '愿你眼里长着太阳，笑里全是坦荡',
+      '祝你零点愿望，十二点实现',
+      '又长大一岁，也要一直可爱',
+      '愿你三冬暖，愿你春不寒',
+      '生日快乐，万事顺遂，平安喜乐'
     ],
     lineInterval: 3200,
     music: 'assets/music.mp3',
@@ -31,6 +46,79 @@
   var qTo = (QUERY.get('to') || '').trim().slice(0, 12);
   var qFrom = (QUERY.get('from') || '').trim().slice(0, 12);
   if (qMsg) CONFIG.message = qMsg;
+
+  /* ==========================================================
+     1.6 体验增强 —— 点击文字彩蛋 + 连击彩蛋（音效走 ../sfx.js）
+     ========================================================== */
+  function sfx(name) { if (window.SFX) window.SFX.play(name); }
+
+  var PHRASES = [
+    '今天的你最美', '愿望都在路上了', '又可爱了一岁', '蛋糕甜甜的', '吹蜡烛要闭眼哦',
+    '生日快乐呀', '被爱包围的一天', '好运正在派送', '新岁胜旧岁', '星星都为你亮',
+    '许个愿吧', '甜蜜加载中', '今天是你的日子', '快乐加倍', '岁月温柔待你',
+    '全世界最棒的你', '蜡烛为你而亮', '礼物在来的路上', '笑一个吧', '年年有今日'
+  ];
+  var SUPER_WORDS = ['愿望成真', '生日快乐', '统统实现', '开心每一天'];
+
+  var phraseBag = [];
+  function nextPhrase() {
+    if (!phraseBag.length) {
+      phraseBag = PHRASES.slice();
+      for (var i = phraseBag.length - 1; i > 0; i--) {
+        var j = (Math.random() * (i + 1)) | 0;
+        var t = phraseBag[i];
+        phraseBag[i] = phraseBag[j];
+        phraseBag[j] = t;
+      }
+    }
+    return phraseBag.pop();
+  }
+
+  function spawnPhrase(x, y) {
+    if (Math.random() > 0.45) return;
+    var el = document.createElement('div');
+    el.className = 'phrase-pop';
+    el.textContent = nextPhrase();
+    el.style.left = Math.min(Math.max(x, 60), W - 60) + 'px';
+    el.style.top = Math.max(y - 20, 60) + 'px';
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2300);
+  }
+
+  var combo = { n: 0, at: 0, cool: 0 };
+  function tapCombo() {
+    var now = performance.now();
+    if (now < combo.cool) return;
+    if (now - combo.at > 2600) combo.n = 0;
+    combo.at = now;
+    combo.n++;
+    if (combo.n >= 5) {
+      combo.n = 0;
+      combo.cool = now + 8000;
+      superBurst();
+    }
+  }
+
+  function superBurst() {
+    sfx('chime');
+    for (var i = 0; i < 6; i++) {
+      (function (k) {
+        setTimeout(function () {
+          fireworks.click(W * (0.15 + Math.random() * 0.7), H * (0.10 + Math.random() * 0.3));
+        }, k * 160);
+      })(i);
+    }
+    if (confettiLayer) confettiLayer.rain(18);
+    var el = document.createElement('div');
+    el.className = 'super-word';
+    el.textContent = pick(SUPER_WORDS);
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2500);
+  }
 
   /* ==========================================================
      2. 渲染舞台 —— 画布、尺寸、主循环
@@ -156,6 +244,80 @@
   }
 
   /* ==========================================================
+     3.5 场景剪影 —— 双层山丘 + 悬挂彩旗串（预渲染离屏，resize 重建）
+     ========================================================== */
+  function createSkyline() {
+    var off = null;
+    var offW = 0;
+    var offH = 0;
+
+    function hill(g, w, h, height, wobble, color, ph) {
+      g.fillStyle = color;
+      g.beginPath();
+      g.moveTo(0, h);
+      for (var x = 0; x <= w; x += 8) {
+        var y = h - height
+          - Math.sin(x / w * Math.PI * 2 + ph) * wobble
+          - Math.sin(x / w * Math.PI * 5 + ph * 2) * wobble * 0.35;
+        g.lineTo(x, y);
+      }
+      g.lineTo(w, h);
+      g.closePath();
+      g.fill();
+    }
+
+    function garland(g, w, y, sag, colors) {
+      g.strokeStyle = 'rgba(255,220,238,0.22)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(0, y);
+      g.quadraticCurveTo(w / 2, y + sag * 2, w, y);
+      g.stroke();
+      var n = Math.max(8, Math.floor(w / 44));
+      for (var i = 1; i < n; i++) {
+        var t = i / n;
+        var x = t * w;
+        /* 二次贝塞尔曲线上的点 */
+        var yy = (1 - t) * (1 - t) * y + 2 * (1 - t) * t * (y + sag * 2) + t * t * y;
+        g.fillStyle = colors[i % colors.length];
+        g.globalAlpha = 0.8;
+        g.beginPath();
+        g.moveTo(x - 5, yy);
+        g.lineTo(x + 5, yy);
+        g.lineTo(x, yy + 11);
+        g.closePath();
+        g.fill();
+        g.globalAlpha = 1;
+      }
+    }
+
+    return {
+      resize: function (w, h) {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        offW = w;
+        offH = h;
+        off = document.createElement('canvas');
+        off.width = Math.round(w * dpr);
+        off.height = Math.round(h * dpr);
+        var g = off.getContext('2d');
+        g.scale(dpr, dpr);
+
+        var garlandColors = ['#ff9ec7', '#ffd700', '#c3a6ff', '#7ec8ff'];
+        garland(g, w, h * 0.13, h * 0.012, garlandColors);
+        garland(g, w, h * 0.21, h * 0.009, garlandColors.slice().reverse());
+        hill(g, w, h, h * 0.10, h * 0.030, '#1d1220', 1.2);
+        hill(g, w, h, h * 0.05, h * 0.022, '#150c18', 4.1);
+      },
+      draw: function (c) {
+        if (!off) return;
+        c.globalCompositeOperation = 'source-over';
+        c.drawImage(off, 0, 0, offW, offH);
+        c.globalCompositeOperation = 'lighter';
+      }
+    };
+  }
+
+  /* ==========================================================
      4. 通用粒子场（爆炸火星、烟雾、火花、彩带共用）
      ========================================================== */
   function createField(sprites) {
@@ -192,6 +354,7 @@
         c.globalAlpha = 1;
       },
       burst: function (x, y, mainColor) {
+        sfx('boom');
         var count = 60 + ((Math.random() * 30) | 0);
         var ring = Math.random() < 0.5;
         var base = 3 + Math.random() * 3.4;
@@ -224,6 +387,7 @@
     var nextAuto = 0;
 
     function launch(tx, ty) {
+      sfx('whoosh');
       rockets.push({
         x: tx + (Math.random() - 0.5) * 30,
         y: H + 12,
@@ -374,6 +538,26 @@
 
     return {
       activate: function () { active = true; },
+      rain: function (n) {
+        for (var i = 0; i < n; i++) {
+          field.add({
+            x: Math.random() * W,
+            y: -12 - Math.random() * 60,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: 1.2 + Math.random() * 1.6,
+            size: 0.7 + Math.random() * 1.3,
+            life: 1,
+            decay: 0,
+            gravity: 0.002,
+            drag: 0.999,
+            sway: 0.6 + Math.random(),
+            breathe: true,
+            ph: Math.random() * Math.PI * 2,
+            color: pick(CONFIG.palette),
+            confetti: true
+          });
+        }
+      },
       update: function (now, ds) {
         if (!active) return;
         var n = 0;
@@ -467,6 +651,7 @@
         if (cd.lit || cd.out) continue;
         cd.lit = true;
         cd.ph = rnd(0, Math.PI * 2);
+        sfx('crackle');
         /* 点燃火花 */
         for (var k = 0; k < 7; k++) {
           field.add({
@@ -491,6 +676,7 @@
     function beginBlow(now) {
       if (phase !== 'blow' || !litCount()) return;
       blowing = true;
+      if (window.SFX) window.SFX.windOn();
       var order = 0;
       for (var i = 0; i < candles.length; i++) {
         if (candles[i].lit) {
@@ -502,6 +688,7 @@
 
     function endBlow() {
       blowing = false;
+      if (window.SFX) window.SFX.windOff();
     }
 
     function extinguish(cd) {
@@ -509,6 +696,7 @@
       cd.out = true;
       cd.blowAt = 0;
       cd.emberLife = 1;
+      sfx('puff');
       /* 烟雾 */
       for (var k = 0; k < 3; k++) {
         field.add({
@@ -743,8 +931,9 @@
 
   var field = addLayer(createField(sprites));
   var balloons = addLayer(createBalloons(sprites));
-  addLayer(createConfetti(field));
+  var confettiLayer = addLayer(createConfetti(field));
   addLayer(createStarfield());
+  addLayer(createSkyline());
   var cake = addLayer(createCake(field, sprites));
   var fireworks = createFireworks(field);
   addLayer(fireworks);
@@ -766,12 +955,24 @@
   function startLines() {
     var subEl = document.getElementById('subText');
     var lineIndex = 0;
-    subEl.textContent = CONFIG.lines[0];
+    var bag = [];
+    function nextLine() {
+      if (!bag.length) {
+        bag = CONFIG.lines.slice();
+        for (var i = bag.length - 1; i > 0; i--) {
+          var j = (Math.random() * (i + 1)) | 0;
+          var t = bag[i];
+          bag[i] = bag[j];
+          bag[j] = t;
+        }
+      }
+      return bag.pop();
+    }
+    subEl.textContent = nextLine();
     setInterval(function () {
       subEl.classList.add('fade');
       setTimeout(function () {
-        lineIndex = (lineIndex + 1) % CONFIG.lines.length;
-        subEl.textContent = CONFIG.lines[lineIndex];
+        subEl.textContent = nextLine();
         subEl.classList.remove('fade');
       }, 500);
     }, CONFIG.lineInterval);
@@ -780,6 +981,7 @@
   function toMain() {
     if (phase === 'main') return;
     phase = 'main';
+    if (window.SFX) window.SFX.windOff();
     setGuide('');
     document.getElementById('message').classList.add('show');
     startLines();
@@ -815,6 +1017,9 @@
       setGuide('长按屏幕，吹灭蜡烛');
     } else if (phase === 'main') {
       fireworks.click(e.clientX, e.clientY);
+      sfx('sparkle');
+      tapCombo();
+      spawnPhrase(e.clientX, e.clientY);
     }
   });
 

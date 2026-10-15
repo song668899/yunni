@@ -14,7 +14,22 @@
       '愿所求皆如愿，所行化坦途',
       '2027，万事顺遂，平安喜乐',
       '旧岁已展千重锦，新年再进百尺竿',
-      '祝我们，年年皆胜意，岁岁都平安'
+      '祝我们，年年皆胜意，岁岁都平安',
+      '愿新年，胜旧年',
+      '往后余生，愿你笑容明媚如初',
+      '新的一年，去见想见的人，做想做的事',
+      '愿你走出半生，归来仍是少年',
+      '雪落成诗，新年如意',
+      '一切美好，都在来的路上',
+      '愿你三冬暖，愿你春不寒',
+      '新岁启封，长乐未央',
+      '山河远阔，人间星河，无一是你，无一不是你',
+      '祝你，梦想成真，前程似锦',
+      '新年的第一场雪，为你而落',
+      '愿岁月温柔，时光不老',
+      '跨过今晚，全是崭新的开始',
+      '2027，请对我们好一点',
+      '凡是过往，皆为序章；所有将来，皆为可盼'
     ],
     lineInterval: 3200,
     music: 'assets/music.mp3',
@@ -31,6 +46,99 @@
   var qTo = (QUERY.get('to') || '').trim().slice(0, 12);
   var qFrom = (QUERY.get('from') || '').trim().slice(0, 12);
   if (qMsg) CONFIG.message = qMsg;
+
+  /* ==========================================================
+     1.6 体验增强 —— 点击文字彩蛋 + 连击彩蛋（音效走 ../sfx.js）
+     ========================================================== */
+  function sfx(name) { if (window.SFX) window.SFX.play(name); }
+
+  var PHRASES = [
+    '新年快乐', '雪落成诗', '万事顺遂', '新岁启封', '好运连连',
+    '长乐未央', '平安喜乐', '一切可期', '冬安', '星光璀璨',
+    '愿望已收到', '新的一年加油', '暖暖的', '跨年快乐', '岁月常新',
+    '万事胜意', '前程似锦', '雪中的浪漫', '初心不改', '未来可期'
+  ];
+  var SUPER_WORDS = ['新年快乐', '万事胜意', '梦想成真', '平安喜乐'];
+
+  var phraseBag = [];
+  function nextPhrase() {
+    if (!phraseBag.length) {
+      phraseBag = PHRASES.slice();
+      for (var i = phraseBag.length - 1; i > 0; i--) {
+        var j = (Math.random() * (i + 1)) | 0;
+        var t = phraseBag[i];
+        phraseBag[i] = phraseBag[j];
+        phraseBag[j] = t;
+      }
+    }
+    return phraseBag.pop();
+  }
+
+  function spawnPhrase(x, y) {
+    if (Math.random() > 0.45) return;
+    var el = document.createElement('div');
+    el.className = 'phrase-pop';
+    el.textContent = nextPhrase();
+    el.style.left = Math.min(Math.max(x, 60), W - 60) + 'px';
+    el.style.top = Math.max(y - 20, 60) + 'px';
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2300);
+  }
+
+  var combo = { n: 0, at: 0, cool: 0 };
+  function tapCombo() {
+    var now = performance.now();
+    if (now < combo.cool) return;
+    if (now - combo.at > 2600) combo.n = 0;
+    combo.at = now;
+    combo.n++;
+    if (combo.n >= 5) {
+      combo.n = 0;
+      combo.cool = now + 8000;
+      superBurst();
+    }
+  }
+
+  function superBurst() {
+    sfx('chime');
+    for (var i = 0; i < 6; i++) {
+      (function (k) {
+        setTimeout(function () {
+          fireworks.click(W * (0.15 + Math.random() * 0.7), H * (0.10 + Math.random() * 0.3));
+        }, k * 160);
+      })(i);
+    }
+    /* 金色流星雨 */
+    for (var j = 0; j < 24; j++) {
+      (function (k) {
+        setTimeout(function () {
+          field.add({
+            x: Math.random() * W,
+            y: -12 - Math.random() * 40,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: 2 + Math.random() * 2,
+            size: 0.6 + Math.random() * 1,
+            life: 1,
+            decay: 0.004,
+            gravity: 0.004,
+            drag: 0.999,
+            sway: 0.3,
+            ph: Math.random() * Math.PI * 2,
+            color: Math.random() < 0.6 ? '#ffd700' : '#fff1a8'
+          });
+        }, k * 70);
+      })(j);
+    }
+    var el = document.createElement('div');
+    el.className = 'super-word';
+    el.textContent = pick(SUPER_WORDS);
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2500);
+  }
 
   /* ==========================================================
      2. 渲染舞台 —— 画布、尺寸、主循环、精灵
@@ -146,6 +254,76 @@
   }
 
   /* ==========================================================
+     3.5 场景剪影 —— 雪丘 + 针叶树（冷色，预渲染离屏）
+     ========================================================== */
+  function createSkyline() {
+    var off = null;
+    var offW = 0;
+    var offH = 0;
+
+    function snowHill(g, w, h, height, wobble, color, ph) {
+      g.fillStyle = color;
+      g.beginPath();
+      g.moveTo(0, h);
+      for (var x = 0; x <= w; x += 8) {
+        var y = h - height
+          - Math.sin(x / w * Math.PI * 1.5 + ph) * wobble
+          - Math.sin(x / w * Math.PI * 4 + ph) * wobble * 0.3;
+        g.lineTo(x, y);
+      }
+      g.lineTo(w, h);
+      g.closePath();
+      g.fill();
+    }
+
+    function pineTree(g, x, baseY, size, color) {
+      g.fillStyle = color;
+      g.fillRect(x - size * 0.06, baseY - size * 0.15, size * 0.12, size * 0.2);
+      for (var i = 0; i < 3; i++) {
+        var ly = baseY - size * (0.18 + i * 0.26);
+        var lw = size * (0.42 - i * 0.1);
+        g.beginPath();
+        g.moveTo(x, ly - size * 0.42);
+        g.lineTo(x - lw, ly);
+        g.lineTo(x + lw, ly);
+        g.closePath();
+        g.fill();
+      }
+    }
+
+    return {
+      resize: function (w, h) {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        offW = w;
+        offH = h;
+        off = document.createElement('canvas');
+        off.width = Math.round(w * dpr);
+        off.height = Math.round(h * dpr);
+        var g = off.getContext('2d');
+        g.scale(dpr, dpr);
+
+        snowHill(g, w, h, h * 0.09, h * 0.025, '#0e1830', 0.6);
+        snowHill(g, w, h, h * 0.045, h * 0.018, '#0a1226', 2.4);
+
+        /* 远处一排针叶树 */
+        var n = Math.max(5, Math.floor(w / 110));
+        for (var i = 0; i < n; i++) {
+          var x = (i + 0.5) / n * w + (i % 2 ? 18 : -14);
+          pineTree(g, x, h - h * 0.045, h * (0.07 + (i % 3) * 0.014), '#0c1526');
+        }
+        pineTree(g, w * 0.16, h - h * 0.04, h * 0.11, '#080f1d');
+        pineTree(g, w * 0.85, h - h * 0.04, h * 0.12, '#080f1d');
+      },
+      draw: function (c) {
+        if (!off) return;
+        c.globalCompositeOperation = 'source-over';
+        c.drawImage(off, 0, 0, offW, offH);
+        c.globalCompositeOperation = 'lighter';
+      }
+    };
+  }
+
+  /* ==========================================================
      4. 通用粒子场（爆炸火星、雪花共用）
      ========================================================== */
   function createField(sprites) {
@@ -181,6 +359,7 @@
         c.globalAlpha = 1;
       },
       burst: function (x, y, mainColor) {
+        sfx('boom');
         var count = 60 + ((Math.random() * 30) | 0);
         var ring = Math.random() < 0.5;
         var base = 3 + Math.random() * 3.4;
@@ -213,6 +392,7 @@
     var nextAuto = 0;
 
     function launch(tx, ty) {
+      sfx('whoosh');
       rockets.push({
         x: tx + (Math.random() - 0.5) * 30,
         y: H + 12,
@@ -335,6 +515,7 @@
   addLayer(fireworks);
   addLayer(createSnow());
   addLayer(createStarfield());
+  addLayer(createSkyline());
 
   window.addEventListener('resize', resize);
 
@@ -380,13 +561,24 @@
 
   function startLines() {
     var subEl = document.getElementById('subText');
-    var lineIndex = 0;
-    subEl.textContent = CONFIG.lines[0];
+    var bag = [];
+    function nextLine() {
+      if (!bag.length) {
+        bag = CONFIG.lines.slice();
+        for (var i = bag.length - 1; i > 0; i--) {
+          var j = (Math.random() * (i + 1)) | 0;
+          var t = bag[i];
+          bag[i] = bag[j];
+          bag[j] = t;
+        }
+      }
+      return bag.pop();
+    }
+    subEl.textContent = nextLine();
     setInterval(function () {
       subEl.classList.add('fade');
       setTimeout(function () {
-        lineIndex = (lineIndex + 1) % CONFIG.lines.length;
-        subEl.textContent = CONFIG.lines[lineIndex];
+        subEl.textContent = nextLine();
         subEl.classList.remove('fade');
       }, 500);
     }, CONFIG.lineInterval);
@@ -408,11 +600,16 @@
 
   skipBtn.addEventListener('click', finishCountdown);
 
-  /* 点击放烟花（启动后；点按钮不算） */
+  /* 点击放烟花（启动后；点按钮不算）+ 正片阶段彩蛋/连击 */
   window.addEventListener('pointerdown', function (e) {
     if (phase === 'idle') return;
     if (e.target && e.target.closest && e.target.closest('button')) return;
     fireworks.click(e.clientX, e.clientY);
+    if (phase === 'main') {
+      sfx('sparkle');
+      tapCombo();
+      spawnPhrase(e.clientX, e.clientY);
+    }
   });
 
   /* ==========================================================

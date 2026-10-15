@@ -12,7 +12,22 @@
       '何其有幸，生于华夏',
       '如果信念有颜色，那一定是中国红',
       '山河虽无恙，吾辈当自强',
-      '祖国有我，请放心'
+      '祖国有我，请放心',
+      '愿山河锦绣，国泰民安',
+      '目光所至皆为华夏，五星闪耀皆为信仰',
+      '我追随的光，是五角星的星光',
+      '华夏波澜壮阔，少年仍需向前',
+      '以青春之名，书写清澈挚爱',
+      '山河远阔，人间烟火',
+      '盛世中华，如你所愿',
+      '清澈的爱，只为中国',
+      '五星红旗，你是我的骄傲',
+      '这盛世，如你所愿',
+      '山河为证，岁月为名',
+      '千年文明，生生不息',
+      '家是小小国，国是千万家',
+      '愿祖国繁荣昌盛，愿你我前程似锦',
+      '江山如画，岁月如歌'
     ],
     lineInterval: 3200,
     music: 'assets/music.mp3',
@@ -30,6 +45,79 @@
   var qTo = (QUERY.get('to') || '').trim().slice(0, 12);
   var qFrom = (QUERY.get('from') || '').trim().slice(0, 12);
   if (qMsg) CONFIG.message = qMsg;
+
+  /* ==========================================================
+     1.6 体验增强 —— 点击文字彩蛋 + 连击彩蛋（音效走 ../sfx.js）
+     ========================================================== */
+  function sfx(name) { if (window.SFX) window.SFX.play(name); }
+
+  var PHRASES = [
+    '中国红', '山河无恙', '灯火里的中国', '盛世如你所愿', '吾辈自强',
+    '生逢盛世', '不负韶华', '这很中国', '红星闪耀', '家国同庆',
+    '岁月峥嵘', '江山如画', '五星闪耀', '灯火可亲', '山河锦绣',
+    '国泰民安', '锦绣中华', '与你同行', '强国有我', '明月照山河'
+  ];
+  var SUPER_WORDS = ['盛世华诞', '山河无恙', '祖国万岁', '这盛世如你所愿'];
+
+  var phraseBag = [];
+  function nextPhrase() {
+    if (!phraseBag.length) {
+      phraseBag = PHRASES.slice();
+      for (var i = phraseBag.length - 1; i > 0; i--) {
+        var j = (Math.random() * (i + 1)) | 0;
+        var t = phraseBag[i];
+        phraseBag[i] = phraseBag[j];
+        phraseBag[j] = t;
+      }
+    }
+    return phraseBag.pop();
+  }
+
+  function spawnPhrase(x, y) {
+    if (Math.random() > 0.45) return;
+    var el = document.createElement('div');
+    el.className = 'phrase-pop';
+    el.textContent = nextPhrase();
+    el.style.left = Math.min(Math.max(x, 60), W - 60) + 'px';
+    el.style.top = Math.max(y - 20, 60) + 'px';
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2300);
+  }
+
+  var combo = { n: 0, at: 0, cool: 0 };
+  function tapCombo() {
+    var now = performance.now();
+    if (now < combo.cool) return;
+    if (now - combo.at > 2600) combo.n = 0;
+    combo.at = now;
+    combo.n++;
+    if (combo.n >= 5) {
+      combo.n = 0;
+      combo.cool = now + 8000;
+      superBurst();
+    }
+  }
+
+  function superBurst() {
+    sfx('chime');
+    for (var i = 0; i < 7; i++) {
+      (function (k) {
+        setTimeout(function () {
+          fireworks.click(W * (0.10 + Math.random() * 0.8), H * (0.10 + Math.random() * 0.32));
+        }, k * 150);
+      })(i);
+    }
+    if (confettiLayer) confettiLayer.rain(20);
+    var el = document.createElement('div');
+    el.className = 'super-word';
+    el.textContent = pick(SUPER_WORDS);
+    document.body.appendChild(el);
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2500);
+  }
 
   /* ==========================================================
      2. 渲染舞台 —— 画布、尺寸、主循环、指针
@@ -145,6 +233,65 @@
   }
 
   /* ==========================================================
+     3.5 场景剪影 —— 城市天际线（楼块 + 暖色窗灯，预渲染离屏）
+     ========================================================== */
+  function createSkyline() {
+    var off = null;
+    var offW = 0;
+    var offH = 0;
+
+    function skylinePath(g, w, h, baseH, color, seed, lamps, lampColor) {
+      g.fillStyle = color;
+      var x = -10;
+      var rnd = function () {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
+      while (x < w + 10) {
+        var bw = 26 + rnd() * 46;
+        var bh = baseH * (0.35 + rnd() * 0.9);
+        g.fillRect(x, h - bh, bw, bh);
+        /* 楼顶小天线 */
+        if (rnd() > 0.72) {
+          g.fillRect(x + bw / 2 - 1, h - bh - 12, 2, 12);
+        }
+        /* 窗灯 */
+        if (lamps) {
+          g.fillStyle = lampColor;
+          for (var wx = x + 5; wx < x + bw - 5; wx += 11) {
+            for (var wy = h - bh + 8; wy < h - 8; wy += 15) {
+              if (rnd() > 0.55) g.fillRect(wx, wy, 3, 4);
+            }
+          }
+          g.fillStyle = color;
+        }
+        x += bw + 4 + rnd() * 10;
+      }
+    }
+
+    return {
+      resize: function (w, h) {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        offW = w;
+        offH = h;
+        off = document.createElement('canvas');
+        off.width = Math.round(w * dpr);
+        off.height = Math.round(h * dpr);
+        var g = off.getContext('2d');
+        g.scale(dpr, dpr);
+        skylinePath(g, w, h, h * 0.16, '#1e0b0e', 12345, true, 'rgba(255,190,120,.5)');
+        skylinePath(g, w, h, h * 0.09, '#150608', 54321, false);
+      },
+      draw: function (c) {
+        if (!off) return;
+        c.globalCompositeOperation = 'source-over';
+        c.drawImage(off, 0, 0, offW, offH);
+        c.globalCompositeOperation = 'lighter';
+      }
+    };
+  }
+
+  /* ==========================================================
      4. 通用粒子场（爆炸火星、金色彩带共用）
      ========================================================== */
   function createField(sprites) {
@@ -180,6 +327,7 @@
         c.globalAlpha = 1;
       },
       burst: function (x, y, mainColor) {
+        sfx('boom');
         var count = 60 + ((Math.random() * 30) | 0);
         var ring = Math.random() < 0.5;
         var base = 3 + Math.random() * 3.4;
@@ -212,6 +360,7 @@
     var nextAuto = 0;
 
     function launch(tx, ty) {
+      sfx('whoosh');
       rockets.push({
         x: tx + (Math.random() - 0.5) * 30,
         y: H + 12,
@@ -351,6 +500,26 @@
           for (var i = 0; i < 16; i++) spawn(w, h, true);
         }
       },
+      rain: function (n) {
+        for (var i = 0; i < n; i++) {
+          field.add({
+            x: Math.random() * W,
+            y: -12 - Math.random() * 60,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: 1.2 + Math.random() * 1.6,
+            size: 0.7 + Math.random() * 1.3,
+            life: 1,
+            decay: 0,
+            gravity: 0.002,
+            drag: 0.999,
+            sway: 0.6 + Math.random(),
+            breathe: true,
+            ph: Math.random() * Math.PI * 2,
+            color: Math.random() < 0.55 ? '#ffd700' : '#ffb347',
+            confetti: true
+          });
+        }
+      },
       update: function (now, ds) {
         var n = 0;
         for (var i = 0; i < field.items.length; i++) {
@@ -388,29 +557,44 @@
   addLayer(createLanterns());
   var fireworks = createFireworks(field);
   addLayer(fireworks);
-  addLayer(createConfetti());
+  var confettiLayer = addLayer(createConfetti(field));
   addLayer(createStarfield());
+  addLayer(createSkyline());
 
   window.addEventListener('resize', resize);
 
-  /* 文字轮播 */
+  /* 文字轮播（洗牌不重复） */
   var subEl = document.getElementById('subText');
-  var lineIndex = 0;
-  subEl.textContent = CONFIG.lines[0];
+  var lineBag = [];
+  function nextLine() {
+    if (!lineBag.length) {
+      lineBag = CONFIG.lines.slice();
+      for (var i = lineBag.length - 1; i > 0; i--) {
+        var j = (Math.random() * (i + 1)) | 0;
+        var t = lineBag[i];
+        lineBag[i] = lineBag[j];
+        lineBag[j] = t;
+      }
+    }
+    return lineBag.pop();
+  }
+  subEl.textContent = nextLine();
   setInterval(function () {
     subEl.classList.add('fade');
     setTimeout(function () {
-      lineIndex = (lineIndex + 1) % CONFIG.lines.length;
-      subEl.textContent = CONFIG.lines[lineIndex];
+      subEl.textContent = nextLine();
       subEl.classList.remove('fade');
     }, 500);
   }, CONFIG.lineInterval);
 
-  /* 点击放烟花（启动后；点按钮不算） */
+  /* 点击放烟花（启动后；点按钮不算）+ 彩蛋/连击 */
   window.addEventListener('pointerdown', function (e) {
     if (!started) return;
     if (e.target && e.target.closest && e.target.closest('button')) return;
     fireworks.click(e.clientX, e.clientY);
+    sfx('sparkle');
+    tapCombo();
+    spawnPhrase(e.clientX, e.clientY);
   });
 
   /* ==========================================================

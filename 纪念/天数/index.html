@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#0b0b10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>纪念日</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<button id="backBtn" class="back" type="button">← 返回</button>
+
+<div id="app">
+  <!-- 展示态 -->
+  <section id="show" class="show">
+    <p id="to" class="to"></p>
+    <div class="hero">
+      <div id="bigNum" class="big-num">0</div>
+      <div id="unit" class="unit">天</div>
+    </div>
+    <p id="sub" class="sub"></p>
+    <p id="msg" class="msg"></p>
+    <p id="from" class="from"></p>
+    <div class="actions">
+      <button id="editBtn" type="button">改日子</button>
+      <button id="shareBtn" type="button" class="primary">分享</button>
+    </div>
+  </section>
+
+  <!-- 设置态 -->
+  <section id="edit" class="edit" hidden>
+    <h2 class="edit-title">记一个日子</h2>
+    <label class="field">
+      <span>日期</span>
+      <input id="dateInput" type="date">
+    </label>
+    <label class="field">
+      <span>致（可选）</span>
+      <input id="toInput" type="text" maxlength="12" placeholder="小鱼">
+    </label>
+    <label class="field">
+      <span>想说的话（可选）</span>
+      <input id="msgInput" type="text" maxlength="60" placeholder="自那天起，我们一起走过的每一天">
+    </label>
+    <label class="field">
+      <span>署名（可选）</span>
+      <input id="fromInput" type="text" maxlength="12" placeholder="阿爽">
+    </label>
+    <button id="saveBtn" type="button" class="primary">保存并查看</button>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -8,7 +8,7 @@
     { id: 'guoqing', name: '国庆祝福', desc: '烟花之夜，点击放烟花', path: '国庆/index.html', ready: true },
     { id: 'yuandan', name: '元旦祝福', desc: '跨年倒数，雪夜烟花', path: '元旦/index.html', ready: true },
     { id: 'birthday', name: '生日祝福', desc: '点亮蜡烛，许愿吹灭', path: '生日/index.html', ready: true },
-    { id: 'chunjie', name: '春节祝福', desc: '待开发', path: '春节/index.html', ready: false }
+    { id: 'chunjie', name: '春节祝福', desc: '红金国潮 · 烟花灯笼 · 接福气', path: '春节/index.html', ready: true, icon: '🏮' }
   ];
 
   var sp = new URLSearchParams(window.location.search);

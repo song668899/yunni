@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#2a0608">
+<title>新春快乐</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+<button id="backBtn" class="back" type="button">← 返回</button>
+<button id="sfxBtn" class="sfx" type="button">🔊</button>
+<button id="gameBtn" class="game-btn" type="button">🧧 接福气</button>
+
+<div class="message">
+  <div class="to" id="toText"></div>
+  <div class="main" id="mainText"></div>
+  <div class="sub" id="subText"></div>
+  <div class="from" id="fromText"></div>
+  <div class="hint" id="hint">点击屏幕，放一束烟花</div>
+</div>
+
+<div class="start" id="start">
+  <button id="startBtn" type="button">迎 新 春</button>
+  <button id="startGameBtn" type="button" class="alt">🧧 接福气</button>
+  <div class="tip">建议打开声音 · 点屏幕放烟花</div>
+</div>
+
+<!-- 接福气小游戏 -->
+<div class="game" id="game" aria-hidden="true">
+  <div class="game-hud">
+    <div class="game-time"><span id="gameTime">30</span><small>秒</small></div>
+    <div class="game-score">福气 <span id="gameScore">0</span></div>
+  </div>
+  <div class="basket" id="basket">🧺</div>
+  <div class="game-result" id="gameResult">
+    <div class="gr-title">福气满满！</div>
+    <div class="gr-score">接到 <span id="grScore">0</span> 个福</div>
+    <div class="gr-best">最高连击 <span id="grBest">0</span></div>
+    <button id="grAgain" type="button">再来一次</button>
+    <button id="grBack" type="button" class="alt">返回</button>
+  </div>
+</div>
+
+<audio id="bgm" loop preload="auto"></audio>
+<script src="../sfx.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
